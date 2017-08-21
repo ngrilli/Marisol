@@ -38,6 +38,7 @@ FiniteStrainCrystalPlasticityDamagePrincipalStrains::FiniteStrainCrystalPlastici
     _dW0e_dstrain(declareProperty<RankTwoTensor>("dW0e_dstrain")),
     _dW0p_dstrain(declareProperty<RankTwoTensor>("dW0p_dstrain")),
     _pk2_undamaged(declareProperty<RankTwoTensor>("pk2_undamaged")), // undamaged 2nd Piola Kirchoff Stress
+    _fe_out(declareProperty<RankTwoTensor>("fe_out")), // Elastic deformation gradient for output
     _etens(LIBMESH_DIM),
     _epos(LIBMESH_DIM),
     _eigval(LIBMESH_DIM)
@@ -188,6 +189,7 @@ FiniteStrainCrystalPlasticityDamagePrincipalStrains::calcResidual( RankTwoTensor
   iden.addIa(1.0);
 
   _fe = _dfgrd_tmp * _fp_prev_inv; // _fp_inv  ==> _fp_prev_inv
+  _fe_out[_qp] = _fe; // Elastic deformation gradient for output
 
   ce = _fe.transpose() * _fe;
   ce_pk2 = ce * _pk2_tmp;
@@ -265,11 +267,16 @@ FiniteStrainCrystalPlasticityDamagePrincipalStrains::calcResidual( RankTwoTensor
   //pk2_new.addIa(-1.0/3.0 * pk2_new.trace());
   //pk2_new.addIa( (_Bulk_Modulus_Ref/_n_Murnaghan) * ( 1.0 - std::pow( 1.0/_fe.det() , _n_Murnaghan ) ) );
 
-  //trD = ( _deformation_gradient[_qp].det() - _deformation_gradient_old[_qp].det() ) / _dt;
-  //trD /= _deformation_gradient_old[_qp].det();
+  // Calculate bulk viscosity damping
+  // C0 * dot(J) / J * |dot(J) / J| + C1 * dot(J) / J
+  // C0 should be chosen of the order of rho * Le^2, rho = density, Le = element size
+  // C1 should be chosen of the order of rho * Le * cs, cs = sound speed
+  // Maheo et al. Mechanics Research Communications 38 (2011) 81 88
+  trD = ( _deformation_gradient[_qp].det() - _deformation_gradient_old[_qp].det() ) / _dt;
+  trD /= _deformation_gradient_old[_qp].det();
 
-  //pk2_new.addIa( _C0 * trD * trD );
-  //pk2_new.addIa( _C1 * abs(trD) );
+  pk2_new.addIa( _C0 * trD * std::abs(trD) );
+  pk2_new.addIa( _C1 * trD );
 
   resid = _pk2_tmp - pk2_new;
 }
