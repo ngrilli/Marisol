@@ -85,7 +85,7 @@ ArrheniusMassFractionRateLimit::computeQpOffDiagJacobian(unsigned int jvar)
 
   if (jvar == _temperature_var) {
     if (reaction_rate < _rate_limit && mass_fraction > 0.0) {
-      return _test[_i][_qp] * mass_fraction * exponential_rate
+      return _test[_i][_qp] * reaction_rate
              * (_exponential_factor / (_temperature[_qp] * _temperature[_qp])) * _phi[_j][_qp];
     }
     else {
