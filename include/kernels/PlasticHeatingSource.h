@@ -11,7 +11,7 @@ template <>
 InputParameters validParams<PlasticHeatingSource>();
 
 /**
- * This kernel calculates the heat source term corresponding to crack friction
+ * This kernel calculates the heat source term corresponding to plastic deformation
  */
 class PlasticHeatingSource : public HeatSource
 {
@@ -27,11 +27,11 @@ private:
 
   std::string _base_name;
 
-  /// Contribution of umdamaged strain energy to damage evolution
+  /// Contribution of plastic strain energy to damage evolution
   const MaterialProperty<Real> & _W0p;
   const MaterialProperty<Real> & _W0p_old;
 
-  /// Variation of undamaged strain energy driving damage evolution with strain
+  /// Variation of plastic strain energy driving damage evolution with strain
   const MaterialProperty<RankTwoTensor> * _dW0p_dstrain;
 
   /// Coupled displacement variables
