@@ -375,3 +375,12 @@ FiniteStrainCrystalPlasticityDamageSym::getSlipIncrements()
     }
   }
 }
+
+RankFourTensor
+FiniteStrainCrystalPlasticityDamageSym::elasticTangentModuli()
+{
+  Real c = _c[_qp];
+  Real xfac = Utility::pow<2>(1.0-c) + _kdamage;
+
+  return xfac * _elasticity_tensor[_qp]; // update jacobian_mult
+}
