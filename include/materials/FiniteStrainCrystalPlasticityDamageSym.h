@@ -59,6 +59,12 @@ protected:
 
   virtual void getSlipIncrements();
 
+  /**
+   * This function calculate the elastic tangent moduli for preconditioner
+   * xfac introduced for damage
+   */
+  virtual RankFourTensor elasticTangentModuli();
+
   const VariableValue & _c;
 
   /// Small number to avoid non-positive definiteness at or near complete damage
