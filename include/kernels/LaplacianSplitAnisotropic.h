@@ -33,6 +33,9 @@ protected:
 private:
   const unsigned int _var_c;
   const VariableGradient & _grad_c;
+
+  // penalty for damage on planes not normal to z (Nguyen, 2017)
+  const Real _beta_penalty;
 };
 
 #endif // LAPLACIANSPLITANISOTROPIC_H
