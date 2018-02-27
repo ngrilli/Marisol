@@ -11,37 +11,40 @@ template <>
 InputParameters
 validParams<LaplacianSplitAnisotropic>()
 {
-  InputParameters params = validParams<KernelGrad>();
+  InputParameters params = validParams<Kernel>();
   params.addClassDescription(
       "Split with a variable that holds the Laplacian of a phase field variable."
-      "anisotropic Laplacian for anisotropic damage model");
+      "anisotropic Laplacian for anisotropic damage model (Nguyen, 2017)");
   params.addRequiredCoupledVar("c", "Field variable to take the Laplacian of");
   params.addRequiredParam<Real>("beta_penalty","penalty for damage on planes not normal to z (Nguyen, 2017)");
+  params.addRequiredParam<std::vector<Real>>("cleavage_plane_normal","Normal to the favoured cleavage plane");
   return params;
 }
 
 LaplacianSplitAnisotropic::LaplacianSplitAnisotropic(const InputParameters & parameters)
-  : KernelGrad(parameters),
+  : Kernel(parameters),
     _var_c(coupled("c")),
     _grad_c(coupledGradient("c")),
-    _beta_penalty(getParam<Real>("beta_penalty"))
+    _beta_penalty(getParam<Real>("beta_penalty")),
+    _cleavage_plane_normal(getParam<std::vector<Real>>("cleavage_plane_normal"))
 {
 }
 
-RealGradient
-LaplacianSplitAnisotropic::precomputeQpResidual()
+Real
+LaplacianSplitAnisotropic::computeQpResidual()
 {
-  RealGradient anisotropic_grad_c;
+  Real Mcoupling; // scalar product: M_i grad_i c
 
-  anisotropic_grad_c(0) = (1.0 + _beta_penalty) * _grad_c[_qp](0);
-  anisotropic_grad_c(1) = (1.0 + _beta_penalty) * _grad_c[_qp](1);
-  anisotropic_grad_c(2) = _grad_c[_qp](2);
+  Mcoupling = _grad_c[_qp](0) * _cleavage_plane_normal[0]
+            + _grad_c[_qp](1) * _cleavage_plane_normal[1]
+            + _grad_c[_qp](2) * _cleavage_plane_normal[2];
 
-  return anisotropic_grad_c; // * _grad_test[_i][_qp]
+  return (1.0 + _beta_penalty) * _grad_c[_qp] * _grad_test[_i][_qp]
+         + _beta_penalty * Mcoupling * Mcoupling * _test[_i][_qp];
 }
 
-RealGradient
-LaplacianSplitAnisotropic::precomputeQpJacobian()
+Real
+LaplacianSplitAnisotropic::computeQpJacobian()
 {
   return 0.0;
 }
