@@ -40,7 +40,7 @@ LaplacianSplitAnisotropic::computeQpResidual()
             + _grad_c[_qp](2) * _cleavage_plane_normal[2];
 
   return (1.0 + _beta_penalty) * _grad_c[_qp] * _grad_test[_i][_qp]
-         + _beta_penalty * Mcoupling * Mcoupling * _test[_i][_qp];
+         - _beta_penalty * Mcoupling * _cleavage_plane_normal * _grad_test[_i][_qp];
 }
 
 Real
