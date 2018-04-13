@@ -11,11 +11,15 @@
 #include "ComputeElasticityTensorBase.h"
 #include "GrainDataTracker.h"
 #include "RankTwoTensor.h"
+#include "EulerAngleProvider.h"
 
 
 //Forward Declarations
 class ComputePolycrystalElasticityTensorCP;
 class EulerAngleProvider;
+
+template<>
+InputParameters validParams<ComputePolycrystalElasticityTensorCP>();
 
 /**
  * Compute an evolving elasticity tensor coupled to a grain growth phase field model.
@@ -29,10 +33,11 @@ protected:
   virtual void computeQpElasticityTensor();
   Real _length_scale;
   Real _pressure_scale;
+//  EulerAngleProvider & _euler;
 
   /// Grain tracker object
   const GrainDataTracker<RankFourTensor> & _grain_tracker;
-  const GrainDataTracker<RankTwoTensor> & _grain_tracker_crysrot;
+  const GrainDataTracker<EulerAngles> & _grain_tracker_crysrot;
 
   /// Number of order parameters
   unsigned int _op_num;
@@ -43,6 +48,8 @@ protected:
   /// vector of elasticity tensor material properties
   std::vector< MaterialProperty<RankFourTensor> *> _D_elastic_tensor;
   MaterialProperty<RankTwoTensor> & _crysrot;
+ // MaterialProperty<RealVectorValue> & _angle2;
+    
 //  const ElementPropertyReadFile * _read_prop_user_object;
     
  // MaterialProperty<RealVectorValue> & _Euler_angles_mat_prop;
