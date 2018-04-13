@@ -7,6 +7,7 @@
 
 #include "ComputePolycrystalElasticityTensorCP.h"
 #include "RotationTensor.h"
+#include "EulerAngleProvider.h"
 
 template<>
 InputParameters validParams<ComputePolycrystalElasticityTensorCP>()
@@ -27,12 +28,15 @@ ComputePolycrystalElasticityTensorCP::ComputePolycrystalElasticityTensorCP(const
     _length_scale(getParam<Real>("length_scale")),
     _pressure_scale(getParam<Real>("pressure_scale")),
     _grain_tracker(getUserObject<GrainDataTracker<RankFourTensor>>("grain_tracker")),
-    _grain_tracker_crysrot(getUserObject<GrainDataTracker<RankTwoTensor>>("grain_tracker_crysrot")),
+    _grain_tracker_crysrot(getUserObject<GrainDataTracker<EulerAngles>>("grain_tracker_crysrot")),
     _op_num(coupledComponents("v")),
     _vals(_op_num),
     _D_elastic_tensor(_op_num),
 
     _crysrot(declareProperty<RankTwoTensor>("crysrot")),
+    //_angle2(declareProperty<RealVectorValue>("angle2")),
+            
+    //_euler(getUserObject<EulerAngleProvider>("euler_angle_provider")),
 
     _JtoeV(6.24150974e18)
 {
@@ -51,7 +55,6 @@ ComputePolycrystalElasticityTensorCP::ComputePolycrystalElasticityTensorCP(const
  }
 
 
-
 void
 ComputePolycrystalElasticityTensorCP::computeQpElasticityTensor()
 {
@@ -63,6 +66,11 @@ ComputePolycrystalElasticityTensorCP::computeQpElasticityTensor()
   // Calculate elasticity tensor
   _elasticity_tensor[_qp].zero();
   _crysrot[_qp].zero();
+    
+  EulerAngles angles;
+  RealVectorValue angle2;
+  angle2.zero();
+    
   Real sum_h = 0.0;
     
  // _console << "beforeCP Finished inside of GrainTracker" << std::endl;
@@ -86,25 +94,31 @@ ComputePolycrystalElasticityTensorCP::computeQpElasticityTensor()
   _elasticity_tensor[_qp] /= sum_h;
  
     
-  const auto & op_to_grains_crysrot = _grain_tracker_crysrot.getVarToFeatureVector(_current_elem->id());
+  const auto & op_to_grains_euler = _grain_tracker_crysrot.getVarToFeatureVector(_current_elem->id());
   sum_h = 0.0;
-  for (auto op_index_crysrot = beginIndex(op_to_grains_crysrot); op_index_crysrot < op_to_grains_crysrot.size(); ++op_index_crysrot)
+  for (auto op_index_euler = beginIndex(op_to_grains_euler); op_index_euler < op_to_grains_euler.size(); ++op_index_euler)
     {
-        auto grain_id_crysrot = op_to_grains_crysrot[op_index_crysrot];
-        if (grain_id_crysrot == FeatureFloodCount::invalid_id)
+        auto grain_id_euler = op_to_grains_euler[op_index_euler];
+        if (grain_id_euler == FeatureFloodCount::invalid_id)
             continue;
         
         // Interpolation factor for elasticity tensors
-        Real h = (1.0 + std::sin(libMesh::pi * ((*_vals[op_index_crysrot])[_qp] - 0.5))) / 2.0;
+        Real h = (1.0 + std::sin(libMesh::pi * ((*_vals[op_index_euler])[_qp] - 0.5))) / 2.0;
         
         // Sum all rotated elasticity tensors
-        _crysrot[_qp] += _grain_tracker_crysrot.getData(grain_id_crysrot) * h;
+        angles = _grain_tracker_crysrot.getData(grain_id_euler) ;
+        angle2 += RealVectorValue(angles) * h;
+       
         sum_h += h;
     }
     
     sum_h = std::max(sum_h, tol);
-    _crysrot[_qp]/= sum_h;
+    angle2 /= sum_h;
     
+    //RealVectorValue angle2 = RealVectorValue(angles);
+    RotationTensor R(angle2);
+    R.update(angle2);
+    _crysrot[_qp] = R.transpose();
     
 
   // Calculate elasticity tensor derivative: Cderiv = dhdopi/sum_h * (Cop - _Cijkl)
