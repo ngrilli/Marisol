@@ -33,15 +33,11 @@ protected:
   const bool _has_temp;
   const VariableValue & _temperature;
 
-  const bool _has_mole_fraction_1;
-  const VariableValue & _mole_fraction_1;
+  const bool _has_mass_fraction_1;
+  const VariableValue & _mass_fraction_1;
 
-  const bool _has_mole_fraction_2;
-  const VariableValue & _mole_fraction_2;
-
-  const Real _molar_mass_1;
-  const Real _molar_mass_2;
-  const Real _molar_mass_3;
+  const bool _has_mass_fraction_2;
+  const VariableValue & _mass_fraction_2;
 
   const Real _my_thermal_conductivity;
   const Real _my_specific_heat_1;
