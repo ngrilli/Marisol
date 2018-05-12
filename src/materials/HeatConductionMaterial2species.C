@@ -21,13 +21,9 @@ validParams<HeatConductionMaterial2species>()
   InputParameters params = validParams<Material>();
 
   params.addCoupledVar("temp", "Coupled Temperature");
-  params.addCoupledVar("mole_fraction_1", "Mole fraction of the first specie");
-  params.addCoupledVar("mole_fraction_2", "Mole fraction of the second specie");
-// third specie is (1.0 - mole_fraction_1 - mole_fraction_2)
-
-  params.addParam<Real>("molar_mass_1", "Molar mass (g/mol) of the first specie");
-  params.addParam<Real>("molar_mass_2", "Molar mass (g/mol) of the second specie");
-  params.addParam<Real>("molar_mass_3", "Molar mass (g/mol) of the third specie");
+  params.addCoupledVar("mass_fraction_1", "Mass fraction of the first specie");
+  params.addCoupledVar("mass_fraction_2", "Mass fraction of the second specie");
+// third specie is (1.0 - mass_fraction_1 - mass_fraction_2)
 
   params.addParam<Real>("thermal_conductivity", "The thermal conductivity value");
   params.addParam<FunctionName>("thermal_conductivity_temperature_function",
@@ -54,15 +50,11 @@ HeatConductionMaterial2species::HeatConductionMaterial2species(const InputParame
 
     _has_temp(isCoupled("temp")),
     _temperature(_has_temp ? coupledValue("temp") : _zero),
-    _has_mole_fraction_1(isCoupled("mole_fraction_1")),
-    _mole_fraction_1(_has_mole_fraction_1 ? coupledValue("mole_fraction_1") : _zero),
-    _has_mole_fraction_2(isCoupled("mole_fraction_2")),
-    _mole_fraction_2(_has_mole_fraction_2 ? coupledValue("mole_fraction_2") : _zero),
-    // mole_fraction_3 = 1.0 - mole_fraction_1 - mole_fraction_2
-
-    _molar_mass_1(isParamValid("molar_mass_1") ? getParam<Real>("molar_mass_1") : 0),
-    _molar_mass_2(isParamValid("molar_mass_2") ? getParam<Real>("molar_mass_2") : 0),
-    _molar_mass_3(isParamValid("molar_mass_3") ? getParam<Real>("molar_mass_3") : 0),
+    _has_mass_fraction_1(isCoupled("mass_fraction_1")),
+    _mass_fraction_1(_has_mass_fraction_1 ? coupledValue("mass_fraction_1") : _zero),
+    _has_mass_fraction_2(isCoupled("mass_fraction_2")),
+    _mass_fraction_2(_has_mass_fraction_2 ? coupledValue("mass_fraction_2") : _zero),
+    // mass_fraction_3 = 1.0 - mass_fraction_1 - mass_fraction_2
 
     _my_thermal_conductivity(
         isParamValid("thermal_conductivity") ? getParam<Real>("thermal_conductivity") : 0),
@@ -113,22 +105,14 @@ HeatConductionMaterial2species::HeatConductionMaterial2species(const InputParame
 void
 HeatConductionMaterial2species::computeProperties()
 {
-  Real mole_fraction_1 = std::min(_mole_fraction_1[_qp] , 1.0);
-  mole_fraction_1 = std::max(mole_fraction_1 , 0.0);
+  Real mass_fraction_1 = std::min(_mass_fraction_1[_qp] , 1.0);
+  mass_fraction_1 = std::max(mass_fraction_1 , 0.0);
 
-  Real mole_fraction_2 = std::min(_mole_fraction_2[_qp] , 1.0);
-  mole_fraction_2 = std::max(mole_fraction_2 , 0.0);
+  Real mass_fraction_2 = std::min(_mass_fraction_2[_qp] , 1.0);
+  mass_fraction_2 = std::max(mass_fraction_2 , 0.0);
 
   // sum of mole fractions is one
-  Real mole_fraction_3 = 1.0 - mole_fraction_1 - mole_fraction_2;
-
-  Real mass_fraction_denominator = _molar_mass_1 * mole_fraction_1
-                                 + _molar_mass_2 * mole_fraction_2
-                                 + _molar_mass_3 * mole_fraction_3;
-
-  Real mass_fraction_1 = _molar_mass_1 * mole_fraction_1 / mass_fraction_denominator;
-  Real mass_fraction_2 = _molar_mass_2 * mole_fraction_2 / mass_fraction_denominator;
-  Real mass_fraction_3 = _molar_mass_3 * mole_fraction_3 / mass_fraction_denominator;
+  Real mass_fraction_3 = 1.0 - mass_fraction_1 - mass_fraction_2;
 
   for (unsigned int qp(0); qp < _qrule->n_points(); ++qp)
   {
