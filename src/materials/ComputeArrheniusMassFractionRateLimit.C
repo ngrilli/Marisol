@@ -50,15 +50,21 @@ ComputeArrheniusMassFractionRateLimit::ComputeArrheniusMassFractionRateLimit(con
 void
 ComputeArrheniusMassFractionRateLimit::computeQpProperties()
 {
-  Real mass_fraction = _mass_fraction[_qp];
+  Real mass_fraction = std::max(_mass_fraction[_qp],0.0);
   Real exp_reaction_rate;
+  mass_fraction = std::min(1.0,mass_fraction);
 
   if (mass_fraction < 0.0) mass_fraction = 0.0; // check positive mass fraction
 
   exp_reaction_rate = _exponential_prefactor
          * std::exp(_exponential_coefficient - _exponential_factor / _temperature[_qp]);
 
-  exp_reaction_rate = std::min(exp_reaction_rate,_rate_limit);
+  if (_exponential_prefactor >= 0.0) {
+    exp_reaction_rate = std::min(exp_reaction_rate,_rate_limit);
+  }
+  else {
+    exp_reaction_rate = std::max(exp_reaction_rate,_rate_limit); // negative rate limit
+  }
 
   _mass_fraction_rate[_qp] = mass_fraction * exp_reaction_rate;
 
@@ -67,7 +73,7 @@ ComputeArrheniusMassFractionRateLimit::computeQpProperties()
 
   if (_fe_problem.currentlyComputingJacobian())
   {
-    if (exp_reaction_rate < _rate_limit && mass_fraction > 0.0) {
+    if (std::abs(exp_reaction_rate) < std::abs(_rate_limit) && mass_fraction > 0.0 && mass_fraction < 1.0) {
       _dmass_fraction_rate_dmass_fraction[_qp] = exp_reaction_rate;
       _dmass_fraction_rate_dtemperature[_qp] = _mass_fraction_rate[_qp]
                                    * (_exponential_factor / (_temperature[_qp] * _temperature[_qp]));
