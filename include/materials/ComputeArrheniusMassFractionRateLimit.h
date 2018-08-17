@@ -10,6 +10,11 @@
 #include "DerivativeMaterialInterface.h"
 #include "Material.h"
 
+class ComputeArrheniusMassFractionRateLimit;
+
+template <>
+InputParameters validParams<ComputeArrheniusMassFractionRateLimit>();
+
 /**
  * ComputeArrheniusMassFractionRateLimit computes the mass fraction rate
  * given by chemical reactions, upper threshold rate is used
