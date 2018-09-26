@@ -117,6 +117,7 @@ ComputeFiniteStrainElasticStressGasJWLSolid::computeQpStress()
   Peos_JWL = _A_JWL * (1.0 - omegaV / _R1_JWL) * std::exp(- _R1_JWL * Je);
   Peos_JWL += _B_JWL * (1.0 - omegaV / _R2_JWL) * std::exp(- _R2_JWL * Je);
   Peos_JWL += omegaV * _Cv_JWL * (temp - _reference_temperature);
+  Peos_JWL = - Peos_JWL; // negative stress in compression
 
   // calculate mass fraction of final gases and intermediates
   mass_fraction_1 = _mass_fraction_1[_qp] ;
